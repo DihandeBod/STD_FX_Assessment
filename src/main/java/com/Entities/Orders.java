@@ -4,12 +4,12 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class Orders {
-    public int Id;
-    public BigDecimal Price;
-    public int Quantity;
-    public Side Side;
-    public LocalDateTime OrderDate;
-    public LocalDateTime LastUpdated;
+    private int Id;
+    private BigDecimal Price;
+    private int Quantity;
+    private Side Side;
+    private LocalDateTime OrderDate;
+    private LocalDateTime LastUpdated;
 
     public Orders(int id, double price, int quantity, Side side, LocalDateTime orderDate, LocalDateTime lastUpdated) {
         Id = id;
@@ -44,7 +44,7 @@ public class Orders {
         Quantity = quantity;
     }
 
-    public Side isSide() {
+    public Side getSide() {
         return Side;
     }
 
