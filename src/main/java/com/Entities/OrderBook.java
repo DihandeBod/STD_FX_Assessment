@@ -1,23 +1,23 @@
 package com.Entities;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class OrderBook {
-    public ConcurrentHashMap<BigDecimal, Queue<Orders>> buyOrders;
-    public ConcurrentHashMap<BigDecimal, Queue<Orders>> sellOrders;
+    public HashMap<BigDecimal, Queue<Orders>> buyOrders;
+    public HashMap<BigDecimal, Queue<Orders>> sellOrders;
 
-    public OrderBook(ConcurrentHashMap<BigDecimal, Queue<Orders>> buyOrders, ConcurrentHashMap<BigDecimal, Queue<Orders>> sellOrders) {
+    public OrderBook(HashMap<BigDecimal, Queue<Orders>> buyOrders, HashMap<BigDecimal, Queue<Orders>> sellOrders) {
         this.buyOrders = buyOrders;
         this.sellOrders = sellOrders;
     }
 
-    public ConcurrentHashMap<BigDecimal, Queue<Orders>> getBuyOrders() {
+    public HashMap<BigDecimal, Queue<Orders>> getBuyOrders() {
         return buyOrders;
     }
 
-    public ConcurrentHashMap<BigDecimal, Queue<Orders>> getSellOrders() {
+    public HashMap<BigDecimal, Queue<Orders>> getSellOrders() {
         return sellOrders;
     }
 }
