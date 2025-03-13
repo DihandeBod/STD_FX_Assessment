@@ -4,6 +4,7 @@ import BusinessRules.OrderConstraints;
 import com.Entities.OrderBook;
 import com.Entities.Orders;
 import com.Entities.Side;
+import com.sun.tools.jconsole.JConsoleContext;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -22,7 +23,7 @@ public class OrderService {
 //    protected HashMap<BigDecimal, Queue<Orders>> sellOrders = new HashMap<BigDecimal, Queue<Orders>>();
     protected List<Orders> allSellOrders = new ArrayList<>();
 
-    protected Map<Integer, Orders> orderById = new HashMap<>();
+    protected Map<BigDecimal, Orders> orderById = new HashMap<>();
 
     protected OrderBook orderBook = new OrderBook(
             new HashMap<BigDecimal, Queue<Orders>>(),
@@ -50,8 +51,8 @@ public class OrderService {
         getAllOrders();
 
         for (Orders order : allOrders) {
-            if (order.getPrice().compareTo(BigDecimal.ZERO) > 0 && order.getQuantity() > 0 && order.getOrderDate().isBefore(order.getOrderDate().plusDays(orderConstraints.VALID_ORDER_DATE_IN_FUTURE)) && order.getOrderDate().isBefore(order.getLastUpdated())) {
-                orderById.put(order.getId(), order);
+            if (order.getPrice().compareTo(BigDecimal.ZERO) > 0 && order.getQuantity() > orderConstraints.VALID_ORDER_QUANTITY && order.getOrderDate().isBefore(order.getOrderDate().plusDays(orderConstraints.VALID_ORDER_DATE_IN_FUTURE)) && order.getOrderDate().isBefore(order.getLastUpdated())) {
+                orderById.put(new BigDecimal(order.getId()), order);
             } else {
                 invalidOrders.add(order);
             }
@@ -97,7 +98,7 @@ public class OrderService {
         setupOrderBook(orderTable, orderDetails);
     }
     public Orders getOrderById(int id) {
-        Orders targetOrder = orderById.get(id);
+        Orders targetOrder = orderById.get(new BigDecimal(id));
         if (targetOrder == null) {
             System.out.println("Order not found");
         }
@@ -124,13 +125,55 @@ public class OrderService {
         targetQueue.remove(orderToRemove);
     }
 
+    public void modifyOrderById(int id, int quantity) {
+        Orders orderToModify = getOrderById(id);
+        if(!Objects.equals(new BigDecimal(orderToModify.getId()), new BigDecimal(id))) {
+            // TODO This should contain logging info
+            System.out.println("Order not found" + orderToModify.getId());
+        }
+
+        orderToModify.setQuantity(quantity);
+        orderToModify.setLastUpdated(LocalDateTime.now());
+
+        if(orderToModify.getSide() == Side.BUY) {
+            Queue<Orders> targetQueue = orderBook.buyOrders.get(orderToModify.getPrice());
+            targetQueue.remove(orderToModify);
+            targetQueue.add(orderToModify);
+        }else {
+            Queue<Orders> targetQueue = orderBook.sellOrders.get(orderToModify.getPrice());
+            targetQueue.remove(orderToModify);
+            targetQueue.add(orderToModify);
+        }
+    }
 
 
     // Additional functionality to see what the hashmap looks like
     public void printOrderBook(){
+        Map.Entry<BigDecimal, Queue<Orders>> buyEntry = orderBook.buyOrders.entrySet().iterator().next();
+        Map.Entry<BigDecimal, Queue<Orders>> sellEntry = orderBook.sellOrders.entrySet().iterator().next();
+
+        buyEntry.getValue().forEach(order -> {
+           System.out.println("\nBUY ORDER: " +
+                   "\nId: " + order.getId() +
+                   "\nBuying price: " + order.getPrice() +
+                   "\nSide: " + order.getSide() +
+                   "\nQuantity: " + order.getQuantity() +
+                   "\nOrderDate: " + order.getOrderDate() +
+                   "\nLastUpdated: " + order.getLastUpdated());
+        });
+
         System.out.println();
-        System.out.println("Updated hashmaps:");
-        System.out.println("Buy Orders : " + orderBook.buyOrders);
-        System.out.println("Sell Orders : " + orderBook.sellOrders);
+
+        sellEntry.getValue().forEach(order -> {
+            System.out.println("\nSELL ORDER: " +
+                    "\nId: " + order.getId() +
+                    "\nBuying price: " + order.getPrice() +
+                    "\nSide: " + order.getSide() +
+                    "\nQuantity: " + order.getQuantity() +
+                    "\nOrderDate: " + order.getOrderDate() +
+                    "\nLastUpdated: " + order.getLastUpdated());
+        });
+
+        // System.out.println("Sell Orders : " + orderBook.getSellOrders());
     }
 }

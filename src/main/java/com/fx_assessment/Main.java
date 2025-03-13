@@ -10,15 +10,16 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         orderService.initialiseOrders();
+
+        orderService.printOrderBook();
         try {
-            orderService.getOrderById(1);
             orderService.removeOrderById(1);
-            orderService.removeOrderById(4);
-            orderService.removeOrderById(5);
+            orderService.modifyOrderById(2, 10);
+            orderService.modifyOrderById(10, 1);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
+        System.out.println("########################### After modifications ###########################");
         orderService.printOrderBook();
     }
 }
