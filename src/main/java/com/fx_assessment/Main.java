@@ -14,12 +14,17 @@ public class Main {
         orderService.printOrderBook();
         try {
             orderService.removeOrderById(1);
-            orderService.modifyOrderById(2, 10);
-            orderService.modifyOrderById(10, 1);
+            orderService.modifyOrderById(2, 10); // Key 1 BUY
+            orderService.modifyOrderById(8, 1); // Key 1 SELL
+            orderService.modifyOrderById(4, 100); // Key 1.25 BUY
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            System.out.println(e.getMessage());
         }
+        System.out.println();
+        System.out.println("###########################################################################");
         System.out.println("########################### After modifications ###########################");
+        System.out.println("###########################################################################");
+        System.out.println();
         orderService.printOrderBook();
     }
 }

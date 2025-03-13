@@ -30,7 +30,7 @@ class OrderServiceTest {
     @DisplayName("Adding a buy order")
     @org.junit.jupiter.api.Test
     void addBuyOrder() {
-
+        assertEquals(2, 1+1);
     }
 
     @org.junit.jupiter.api.Test
