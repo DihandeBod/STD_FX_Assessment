@@ -125,7 +125,7 @@ public class OrderService {
                 orderBook.sellOrders.remove(orderToRemove.getPrice());
             }
         }
-
+        orderById.remove(new BigDecimal(id));
         targetQueue.remove(orderToRemove);
     }
 

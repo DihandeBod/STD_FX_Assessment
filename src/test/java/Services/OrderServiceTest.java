@@ -1,55 +1,151 @@
 package Services;
 
+import BusinessRules.OrderConstraints;
+import com.Entities.Orders;
+import com.Entities.Side;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Queue;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class OrderServiceTest {
 
-    @org.junit.jupiter.api.BeforeEach
+    private OrderService orderService;
+
+    @BeforeEach
     void setUp() {
-        System.out.println("Running OrderServiceTest setUp");
+        OrderConstraints orderConstraints = new OrderConstraints();
+        orderService = new OrderService(orderConstraints);
+
+        orderService.allOrders.clear();
+        orderService.invalidOrders.clear();
+        orderService.allBuyOrders.clear();
+        orderService.allSellOrders.clear();
+        orderService.orderById.clear();
+        orderService.orderBook.getBuyOrders().clear();
+        orderService.orderBook.getSellOrders().clear();
     }
 
-    @org.junit.jupiter.api.AfterEach
+    @AfterEach
     void tearDown() {
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
+    @DisplayName("Loading orders into hashmap")
     void getAllOrders() {
+        OrderConstraints orderConstraints = new OrderConstraints();
+        OrderService orderService = new OrderService(orderConstraints);
+        orderService.allOrders.clear();
+
+        orderService.initialiseOrders();
+        assertEquals(10, orderService.allOrders.size());
+        assertEquals(3, orderService.allSellOrders.size());
     }
 
-    @org.junit.jupiter.api.Test
-    void initialiseOrders() {
+    @Test
+    @DisplayName("Size check of buy orders")
+    void checkBuyOrdersSize() {
+        OrderConstraints orderConstraints = new OrderConstraints();
+        OrderService orderService = new OrderService(orderConstraints);
+        orderService.allOrders.clear();
+
+        orderService.initialiseOrders();
+
+        assertEquals(7, orderService.allBuyOrders.size());
     }
 
-    @org.junit.jupiter.api.Test
-    void handleOrders() {
+    @Test
+    @DisplayName("Size check of sell orders")
+    void checkSellOrdersSize() {
+        OrderConstraints orderConstraints = new OrderConstraints();
+        OrderService orderService = new OrderService(orderConstraints);
+        orderService.allOrders.clear();
+
+        orderService.initialiseOrders();
+
+        assertEquals(3, orderService.allSellOrders.size());
     }
 
+    @Test
     @DisplayName("Adding a buy order")
-    @org.junit.jupiter.api.Test
     void addBuyOrder() {
-        assertEquals(2, 1+1);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
+    @DisplayName("Adding a sell order")
     void addSellOrder() {
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
+    @DisplayName("Retrieving order with id 4")
     void getOrderById() {
+        orderService.initialiseOrders();
+
+        Orders targetOrder = orderService.getOrderById(4);
+        assertAll(
+                () -> assertNotNull(targetOrder),
+                () -> assertEquals(10, targetOrder.getQuantity()),
+                () -> assertEquals(4, targetOrder.getId())
+        );
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
+    @DisplayName("Removing order with id 1")
     void removeOrderById() {
+        orderService.initialiseOrders();
+
+        Orders existingOrder = orderService.getOrderById(1);
+        assertNotNull(existingOrder);
+
+        orderService.removeOrderById(1);
+
+        if (existingOrder.getSide() == Side.BUY) {
+            Queue<Orders> queueAtPrice = orderService.orderBook.getBuyOrders().get(existingOrder.getPrice());
+            // queue might be null if it was the only order at that price
+            if (queueAtPrice != null) {
+                assertNull(orderService.getOrderById(1));
+                assertFalse(queueAtPrice.contains(existingOrder), "Order should be removed from the queue");
+            }
+        }else{
+            Queue<Orders> queueAtPrice = orderService.orderBook.getSellOrders().get(existingOrder.getPrice());
+            // queue might be null if it was the only order at that price
+            if (queueAtPrice != null) {
+                assertNull(orderService.getOrderById(1));
+                assertFalse(queueAtPrice.contains(existingOrder), "Order should be removed from the queue");
+            }
+        }
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
+    @DisplayName("Modifying quantity of order with id 2")
     void modifyOrderById() {
+        OrderConstraints orderConstraints = new OrderConstraints();
+        OrderService orderService = new OrderService(orderConstraints);
+        orderService.allOrders.clear();
+
+        orderService.initialiseOrders();
+
+        Orders targetOrder = orderService.getOrderById(2);
+        assertAll(
+                () -> assertEquals(5, targetOrder.getQuantity()),
+                () -> assertEquals(2, targetOrder.getId())
+        );
+
+        orderService.modifyOrderById(2, 10);
+        assertAll(
+                () -> assertEquals(10, targetOrder.getQuantity()),
+                () -> assertEquals(2, targetOrder.getId())
+        );
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
+    @DisplayName("Test printOrderBook() - just ensure it runs without error")
     void printOrderBook() {
+        orderService.initialiseOrders();
+        assertDoesNotThrow(() -> orderService.printOrderBook());
     }
 }
