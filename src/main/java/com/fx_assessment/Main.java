@@ -1,17 +1,27 @@
 package com.fx_assessment;
 
 import BusinessRules.OrderConstraints;
+import Services.MatchingEngineService;
 import Services.OrderService;
 
 
 public class Main {
-    protected static OrderConstraints orderConstraints = new OrderConstraints();
-    protected static OrderService orderService = new OrderService(orderConstraints);
-
     public static void main(String[] args) throws Exception {
-        orderService.initialiseOrders();
 
-        orderService.printOrderBook();
+        OrderConstraints orderConstraints = new OrderConstraints();
+
+        OrderService orderService = new OrderService(orderConstraints);
+
+        MatchingEngineService matchingEngineService = new MatchingEngineService(
+                orderService.getOrderBook(),
+                orderService.getOrderIdMap(),
+                orderService
+        );
+
+        orderService.setMatchingEngineService(matchingEngineService);
+
+        orderService.initialiseOrders();
+        orderService.printOrderBook(orderService.getOrderBook());
         try {
             orderService.removeOrderById(1);
             orderService.modifyOrderById(2, 10); // Key 1 BUY
@@ -25,6 +35,6 @@ public class Main {
         System.out.println("########################### After modifications ###########################");
         System.out.println("###########################################################################");
         System.out.println();
-        orderService.printOrderBook();
+        // orderService.printOrderBook();
     }
 }
