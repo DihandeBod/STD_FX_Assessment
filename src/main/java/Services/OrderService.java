@@ -4,29 +4,37 @@ import BusinessRules.OrderConstraints;
 import com.Entities.OrderBook;
 import com.Entities.Orders;
 import com.Entities.Side;
-import com.sun.tools.jconsole.JConsoleContext;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 
 public class OrderService {
-    private final OrderConstraints orderConstraints;
-
     protected List<Orders> allOrders = new LinkedList<>();
     protected List<Orders> invalidOrders = new ArrayList<>();
-
     protected List<Orders> allBuyOrders = new ArrayList<>();
-
     protected List<Orders> allSellOrders = new ArrayList<>();
-
-    protected Map<BigDecimal, Orders> orderById = new HashMap<>();
-
+    protected Map<BigDecimal, Orders> orderIdMap = new HashMap<>();
     protected OrderBook orderBook = new OrderBook(new HashMap<>(), new HashMap<>());
+    protected MatchingEngineService matchingEngineService;
+    private final OrderConstraints orderConstraints;
 
     public OrderService(OrderConstraints orderConstraints) {
         this.orderConstraints = orderConstraints;
     }
+
+    public void setMatchingEngineService(MatchingEngineService matchingEngineService) {
+        this.matchingEngineService = matchingEngineService;
+    }
+
+    public OrderBook getOrderBook() {
+        return this.orderBook;
+    }
+
+    public Map<BigDecimal, Orders> getOrderIdMap() {
+        return this.orderIdMap;
+    }
+
 
     // getAllOrders & initialiseOrders & handleOrders are all in charge of ensuring that there are orders to add to the order  book
     public void getAllOrders() {
@@ -47,11 +55,8 @@ public class OrderService {
         getAllOrders();
 
         for (Orders order : allOrders) {
-            if (order.getPrice().compareTo(BigDecimal.ZERO) > 0
-                    && order.getQuantity() > orderConstraints.VALID_ORDER_QUANTITY
-                    && order.getOrderDate().isBefore(order.getOrderDate().plusDays(orderConstraints.VALID_ORDER_DATE_IN_FUTURE))
-                    && (order.getOrderDate().isBefore(order.getLastUpdated()) || order.getOrderDate().isEqual(order.getLastUpdated()))) {
-                orderById.put(new BigDecimal(order.getId()), order);
+            if (order.getPrice().compareTo(BigDecimal.ZERO) > 0 && order.getQuantity() > orderConstraints.VALID_ORDER_QUANTITY && order.getOrderDate().isBefore(order.getOrderDate().plusDays(orderConstraints.VALID_ORDER_DATE_IN_FUTURE)) && (order.getOrderDate().isBefore(order.getLastUpdated()) || order.getOrderDate().isEqual(order.getLastUpdated()))) {
+                orderIdMap.put(new BigDecimal(order.getId()), order);
             } else {
                 invalidOrders.add(order);
             }
@@ -81,13 +86,20 @@ public class OrderService {
     // These methods ensure that the orders are added to their respective hashmaps
     private void setupOrderBook(HashMap<BigDecimal, Queue<Orders>> orderTable, List<Orders> orderDetails) {
         for (Orders order : orderDetails) {
-            if (orderTable.containsKey(order.getPrice())) {
-                orderTable.get(order.getPrice()).add(order);
+
+            if (matchingEngineService != null && matchingEngineService.fulfillOrder(order)) {
+                System.out.println("Order has been fulfilled");
             } else {
-                Queue<Orders> ordersQueue = new LinkedList<>();
-                ordersQueue.add(order);
-                orderTable.put(order.getPrice(), ordersQueue);
+                if (orderTable.containsKey(order.getPrice())) {
+                    orderTable.get(order.getPrice()).add(order);
+                } else {
+                    Queue<Orders> ordersQueue = new LinkedList<>();
+                    ordersQueue.add(order);
+                    orderTable.put(order.getPrice(), ordersQueue);
+                }
             }
+
+
         }
     }
 
@@ -101,7 +113,7 @@ public class OrderService {
     }
 
     public Orders getOrderById(int id) {
-        Orders targetOrder = orderById.get(new BigDecimal(id));
+        Orders targetOrder = orderIdMap.get(new BigDecimal(id));
         if (targetOrder == null) {
             System.out.println("Order not found");
         }
@@ -115,36 +127,35 @@ public class OrderService {
         if (orderToRemove.getSide() == Side.BUY) {
             targetQueue = orderBook.buyOrders.get(orderToRemove.getPrice());
             targetQueue.remove(orderToRemove);
-            if(targetQueue.isEmpty()) {
+            if (targetQueue.isEmpty()) {
                 orderBook.buyOrders.remove(orderToRemove.getPrice());
             }
         } else {
             targetQueue = orderBook.sellOrders.get(orderToRemove.getPrice());
             targetQueue.remove(orderToRemove);
-            if(targetQueue.isEmpty()) {
+            if (targetQueue.isEmpty()) {
                 orderBook.sellOrders.remove(orderToRemove.getPrice());
             }
         }
-        orderById.remove(new BigDecimal(id));
+        orderIdMap.remove(new BigDecimal(id));
         targetQueue.remove(orderToRemove);
     }
 
     public void modifyOrderById(int id, int quantity) {
         Orders orderToModify = getOrderById(id);
-        if(!Objects.equals(new BigDecimal(orderToModify.getId()), new BigDecimal(id))) {
-            // TODO This should contain logging info
-            System.out.println("Order not found" + orderToModify.getId());
-        }
+        if (orderToModify == null) return;
 
         orderToModify.setQuantity(quantity);
         orderToModify.setLastUpdated(LocalDateTime.now());
 
-        if(orderToModify.getSide() == Side.BUY) {
-            Queue<Orders> targetQueue = orderBook.buyOrders.get(orderToModify.getPrice());
-            targetQueue.remove(orderToModify);
-            targetQueue.add(orderToModify);
-        }else {
-            Queue<Orders> targetQueue = orderBook.sellOrders.get(orderToModify.getPrice());
+        Queue<Orders> targetQueue;
+        if (orderToModify.getSide() == Side.BUY) {
+            targetQueue = orderBook.buyOrders.get(orderToModify.getPrice());
+        } else {
+            targetQueue = orderBook.sellOrders.get(orderToModify.getPrice());
+        }
+
+        if (targetQueue != null) {
             targetQueue.remove(orderToModify);
             targetQueue.add(orderToModify);
         }
@@ -152,40 +163,38 @@ public class OrderService {
 
 
     // Additional functionality to see what the hashmap looks like
-    public void printOrderBook(){
+    public void printOrderBook(OrderBook orderBookToPrint) {
         System.out.println("#########################################");
         System.out.println("############### BUY ORDER ###############");
         System.out.println("#########################################");
         System.out.println();
-        orderBook.getBuyOrders().entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
-            System.out.println("KEY: " + entry.getKey());
-            entry.getValue().forEach(order -> {
-                System.out.println("Id: " + order.getId());
-                System.out.println("Price: " + order.getPrice());
-                System.out.println("Side: " + order.getSide());
-                System.out.println("Quantity: " + order.getQuantity());
-                System.out.println("OrderDate: " + order.getOrderDate());
-                System.out.println("LastUpdate: " + order.getLastUpdated());
-                System.out.println();
-            });
-        });
-        System.out.println();
-        System.out.println("##########################################");
+
+        orderBookToPrint.getBuyOrders().entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> {
+                    System.out.println("KEY: " + entry.getKey());
+                    entry.getValue().forEach(this::printOrderDetails);
+                });
+
+        System.out.println("\n##########################################");
         System.out.println("############### SELL ORDER ###############");
-        System.out.println("##########################################");
+        System.out.println("##########################################\n");
 
-        orderBook.getSellOrders().entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
-            System.out.println("KEY: " + entry.getKey());
-            entry.getValue().forEach(order -> {
-                System.out.println("Id: " + order.getId());
-                System.out.println("Price: " + order.getPrice());
-                System.out.println("Side: " + order.getSide());
-                System.out.println("Quantity: " + order.getQuantity());
-                System.out.println("OrderDate: " + order.getOrderDate());
-                System.out.println("LastUpdate: " + order.getLastUpdated());
-                System.out.println();
-            });
-        });
+        orderBookToPrint.getSellOrders().entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> {
+                    System.out.println("KEY: " + entry.getKey());
+                    entry.getValue().forEach(this::printOrderDetails);
+                });
+    }
 
+    private void printOrderDetails(Orders order) {
+        System.out.println("Id: " + order.getId());
+        System.out.println("Price: " + order.getPrice());
+        System.out.println("Side: " + order.getSide());
+        System.out.println("Quantity: " + order.getQuantity());
+        System.out.println("OrderDate: " + order.getOrderDate());
+        System.out.println("LastUpdate: " + order.getLastUpdated());
+        System.out.println();
     }
 }
