@@ -8,6 +8,7 @@ import com.Entities.Side;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class OrderService {
     protected List<Orders> allOrders = new LinkedList<>();
@@ -38,17 +39,17 @@ public class OrderService {
 
     // getAllOrders & initialiseOrders & handleOrders are all in charge of ensuring that there are orders to add to the order  book
     public void getAllOrders() {
-        allOrders.add(new Orders(1, 1.00, 10, Side.BUY, LocalDateTime.now(), LocalDateTime.now()));
-        allOrders.add(new Orders(2, 1.00, 5, Side.BUY, LocalDateTime.now(), LocalDateTime.now().plusDays(1)));
-        allOrders.add(new Orders(3, 1.00, 15, Side.BUY, LocalDateTime.now(), LocalDateTime.now().plusHours(1)));
-        allOrders.add(new Orders(4, 1.25, 10, Side.BUY, LocalDateTime.now(), LocalDateTime.now().plusDays(2)));
-        allOrders.add(new Orders(5, 1.25, 16, Side.BUY, LocalDateTime.now(), LocalDateTime.now().plusDays(2)));
-        allOrders.add(new Orders(6, 1.00, 10, Side.BUY, LocalDateTime.now(), LocalDateTime.now().plusSeconds(10)));
-        allOrders.add(new Orders(7, 1.00, 20, Side.BUY, LocalDateTime.now(), LocalDateTime.now().plusHours(2)));
+        allOrders.add(new Orders(1, 1.00, 10, Side.BUY, LocalDateTime.now(), LocalDateTime.now(), false));
+        allOrders.add(new Orders(2, 1.00, 5, Side.BUY, LocalDateTime.now(), LocalDateTime.now().plusDays(1), false));
+        allOrders.add(new Orders(3, 1.00, 15, Side.BUY, LocalDateTime.now(), LocalDateTime.now().plusHours(1), false));
+        allOrders.add(new Orders(4, 1.25, 10, Side.BUY, LocalDateTime.now(), LocalDateTime.now().plusDays(2), false));
+        allOrders.add(new Orders(5, 1.25, 16, Side.BUY, LocalDateTime.now(), LocalDateTime.now().plusDays(2), false));
+        allOrders.add(new Orders(6, 1.00, 10, Side.BUY, LocalDateTime.now(), LocalDateTime.now().plusSeconds(10), false));
+        allOrders.add(new Orders(7, 1.00, 20, Side.BUY, LocalDateTime.now(), LocalDateTime.now().plusHours(2), false));
 
-        allOrders.add(new Orders(8, 1.00, 5, Side.SELL, LocalDateTime.now(), LocalDateTime.now().plusMinutes(30)));
-        allOrders.add(new Orders(9, 1.00, 12, Side.SELL, LocalDateTime.now(), LocalDateTime.now().plusDays(2)));
-        allOrders.add(new Orders(10, 1.00, 20, Side.SELL, LocalDateTime.now().plusDays(5), LocalDateTime.now().plusDays(5)));
+        allOrders.add(new Orders(8, 2.00, 5, Side.SELL, LocalDateTime.now(), LocalDateTime.now().plusMinutes(30), false));
+        allOrders.add(new Orders(9, 2.00, 12, Side.SELL, LocalDateTime.now(), LocalDateTime.now().plusDays(2), false));
+        allOrders.add(new Orders(10, 2.00, 20, Side.SELL, LocalDateTime.now().plusDays(5), LocalDateTime.now().plusDays(5), false));
     }
 
     public void initialiseOrders() {
@@ -62,15 +63,15 @@ public class OrderService {
             }
         }
         allOrders.removeAll(invalidOrders);
-        handleOrders();
+        handleOrders(allOrders);
     }
 
-    public void handleOrders() {
-        if (allOrders.size() <= 0) {
+    public void handleOrders(List<Orders> ordersToHandle) {
+        if (ordersToHandle == null || ordersToHandle.isEmpty()) {
             throw new IllegalArgumentException("There are no orders to handle");
         }
 
-        for (Orders order : allOrders) {
+        for (Orders order : ordersToHandle) {
             if (order.getSide().equals(Side.BUY)) {
                 allBuyOrders.add(order);
             } else {
@@ -80,16 +81,22 @@ public class OrderService {
 
         addBuyOrder(orderBook.buyOrders, allBuyOrders);
         addSellOrder(orderBook.sellOrders, allSellOrders);
+
+        allBuyOrders.clear();
+        allSellOrders.clear();
     }
 
 
     // These methods ensure that the orders are added to their respective hashmaps
     private void setupOrderBook(HashMap<BigDecimal, Queue<Orders>> orderTable, List<Orders> orderDetails) {
         for (Orders order : orderDetails) {
+            boolean wasMatched = false;
 
-            if (matchingEngineService != null && matchingEngineService.fulfillOrder(order)) {
-                System.out.println("Order has been fulfilled");
-            } else {
+            if (matchingEngineService != null) {
+                wasMatched = matchingEngineService.fulfillOrder(order);
+            }
+
+            if(!wasMatched) {
                 if (orderTable.containsKey(order.getPrice())) {
                     orderTable.get(order.getPrice()).add(order);
                 } else {
@@ -98,8 +105,6 @@ public class OrderService {
                     orderTable.put(order.getPrice(), ordersQueue);
                 }
             }
-
-
         }
     }
 
@@ -110,6 +115,18 @@ public class OrderService {
 
     public void addSellOrder(HashMap<BigDecimal, Queue<Orders>> orderTable, List<Orders> orderDetails) {
         setupOrderBook(orderTable, orderDetails);
+    }
+
+    public void addOrderNoCheck(HashMap<BigDecimal, Queue<Orders>> orderTable, List<Orders> orderDetails) {
+        for(Orders order : orderDetails) {
+            if (orderTable.containsKey(order.getPrice())) {
+                orderTable.get(order.getPrice()).add(order);
+            } else {
+                Queue<Orders> ordersQueue = new LinkedList<>();
+                ordersQueue.add(order);
+                orderTable.put(order.getPrice(), ordersQueue);
+            }
+        }
     }
 
     public Orders getOrderById(int id) {
@@ -172,8 +189,12 @@ public class OrderService {
         orderBookToPrint.getBuyOrders().entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .forEach(entry -> {
-                    System.out.println("KEY: " + entry.getKey());
-                    entry.getValue().forEach(this::printOrderDetails);
+                    // For each price key, collect the quantities of all orders into one comma-separated string
+                    String quantities = entry.getValue().stream()
+                            .map(order -> order.getId() + ":" + order.getQuantity())
+                            .collect(Collectors.joining(", "));
+
+                    System.out.println("KEY: " + entry.getKey() + " \t--> " + quantities);
                 });
 
         System.out.println("\n##########################################");
@@ -183,18 +204,29 @@ public class OrderService {
         orderBookToPrint.getSellOrders().entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .forEach(entry -> {
-                    System.out.println("KEY: " + entry.getKey());
-                    entry.getValue().forEach(this::printOrderDetails);
+                    String quantities = entry.getValue().stream()
+                            .map(order -> order.getId() + ":" + order.getQuantity())
+                            .collect(Collectors.joining(", "));
+
+                    System.out.println("KEY: " + entry.getKey() + " \t--> " + quantities);
                 });
     }
 
-    private void printOrderDetails(Orders order) {
-        System.out.println("Id: " + order.getId());
-        System.out.println("Price: " + order.getPrice());
-        System.out.println("Side: " + order.getSide());
-        System.out.println("Quantity: " + order.getQuantity());
-        System.out.println("OrderDate: " + order.getOrderDate());
-        System.out.println("LastUpdate: " + order.getLastUpdated());
-        System.out.println();
+    public void cleanUpOrderBook() {
+        Set<BigDecimal> buyKeySet = orderBook.buyOrders.keySet();
+        Set<BigDecimal> sellKeySet = orderBook.sellOrders.keySet();
+
+        for (BigDecimal price : new ArrayList<>(buyKeySet)) {
+            if (orderBook.buyOrders.get(price).isEmpty()) {
+                orderBook.buyOrders.remove(price);
+            }
+        }
+
+        for (BigDecimal price : new ArrayList<>(sellKeySet)) {
+            if (orderBook.sellOrders.get(price).isEmpty()) {
+                orderBook.sellOrders.remove(price);
+            }
+        }
     }
+
 }
