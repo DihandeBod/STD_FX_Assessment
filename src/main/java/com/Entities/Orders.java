@@ -10,14 +10,16 @@ public class Orders {
     private Side Side;
     private LocalDateTime OrderDate;
     private LocalDateTime LastUpdated;
+    private boolean Completed;
 
-    public Orders(int id, double price, int quantity, Side side, LocalDateTime orderDate, LocalDateTime lastUpdated) {
+    public Orders(int id, double price, int quantity, Side side, LocalDateTime orderDate, LocalDateTime lastUpdated, boolean completed) {
         Id = id;
         Price = new BigDecimal(price);
         Quantity = quantity;
         Side = side;
         OrderDate = orderDate;
         LastUpdated = lastUpdated;
+        Completed = completed;
     }
 
     public int getId() {
@@ -66,5 +68,13 @@ public class Orders {
 
     public void setLastUpdated(LocalDateTime lastUpdated) {
         LastUpdated = lastUpdated;
+    }
+
+    public boolean getCompleted() {
+        return Completed;
+    }
+
+    public void setCompleted(boolean completed) {
+        Completed = completed;
     }
 }
