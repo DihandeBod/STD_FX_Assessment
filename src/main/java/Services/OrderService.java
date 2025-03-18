@@ -139,6 +139,7 @@ public class OrderService {
 
     public void removeOrderById(int id) {
         Orders orderToRemove = getOrderById(id);
+        if(orderToRemove == null) return; // Safety check, as getOrderById() has a null check
 
         Queue<Orders> targetQueue;
         if (orderToRemove.getSide() == Side.BUY) {
