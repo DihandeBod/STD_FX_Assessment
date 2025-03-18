@@ -14,9 +14,9 @@ import static java.lang.Math.abs;
 
 public class MatchingEngineService {
 
-    private final OrderBook orderBook;
-    private final OrderService orderService;
-    private Map<BigDecimal, Orders> orderIdMap;
+    protected final OrderBook orderBook;
+    protected final OrderService orderService;
+    protected final Map<BigDecimal, Orders> orderIdMap;
 
     public MatchingEngineService(OrderBook orderBook, Map<BigDecimal, Orders> orderById, OrderService orderService) {
         this.orderBook = orderBook;
@@ -52,7 +52,7 @@ public class MatchingEngineService {
         incomingOrder.setQuantity(quantityRemaining);
         removeCompletedOrders(targetQueueForIncomingOrder);
 
-        if(quantityRemaining > 0) {
+        if (quantityRemaining > 0) {
             List<Orders> leftoverList = new ArrayList<>();
             leftoverList.add(incomingOrder);
             if (incomingOrder.getSide() == Side.BUY) {
@@ -87,7 +87,7 @@ public class MatchingEngineService {
     private int matchLessThan(Orders incomingOrder, Orders targetOrder) {
         int remainingQuantity = incomingOrder.getQuantity() - targetOrder.getQuantity();
         incomingOrder.setCompleted(true);
-        if(remainingQuantity < 0) {
+        if (remainingQuantity < 0) {
             targetOrder.setQuantity(abs(remainingQuantity));
             remainingQuantity = 0;
         }
