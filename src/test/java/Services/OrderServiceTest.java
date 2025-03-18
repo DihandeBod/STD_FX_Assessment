@@ -3,7 +3,6 @@ package Services;
 import BusinessRules.OrderConstraints;
 import com.Entities.Orders;
 import com.Entities.Side;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -96,7 +95,7 @@ class OrderServiceTest {
                 assertNull(orderService.getOrderById(1));
                 assertFalse(queueAtPrice.contains(existingOrder), "Order should be removed from the queue");
             }
-        }else{
+        } else {
             Queue<Orders> queueAtPrice = orderService.orderBook.getSellOrders().get(existingOrder.getPrice());
             // queue might be null if it was the only order at that price
             if (queueAtPrice != null) {

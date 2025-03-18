@@ -49,9 +49,9 @@ public class Main {
         List<Orders> incomingOrdersToMatch = new ArrayList<>();
         incomingOrdersToMatch.add(new Orders(12, 1.00, 57, Side.SELL, LocalDateTime.now(), LocalDateTime.now().plusDays(1), false));
         incomingOrdersToMatch.add(new Orders(11, 2.00, 35, Side.BUY, LocalDateTime.now(), LocalDateTime.now(), false));
-        try{
+        try {
             orderService.handleOrders(incomingOrdersToMatch);
-        }catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e.getMessage());
         }
 
