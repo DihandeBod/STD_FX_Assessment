@@ -13,6 +13,7 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 public class OrderService {
+    private final OrderConstraints orderConstraints;
     protected List<Orders> allOrders = new LinkedList<>();
     protected List<Orders> invalidOrders = new ArrayList<>();
     protected List<Orders> allBuyOrders = new ArrayList<>();
@@ -20,7 +21,6 @@ public class OrderService {
     protected Map<BigDecimal, Orders> orderIdMap = new HashMap<>();
     protected OrderBook orderBook = new OrderBook(new HashMap<>(), new HashMap<>());
     protected MatchingEngineService matchingEngineService;
-    private final OrderConstraints orderConstraints;
 
     public OrderService(OrderConstraints orderConstraints) {
         this.orderConstraints = orderConstraints;
@@ -99,7 +99,7 @@ public class OrderService {
                 wasMatched = matchingEngineService.fulfillOrder(order);
             }
 
-            if(!wasMatched) {
+            if (!wasMatched) {
                 if (orderTable.containsKey(order.getPrice())) {
                     orderTable.get(order.getPrice()).add(order);
                 } else {
@@ -122,7 +122,7 @@ public class OrderService {
     }
 
     public void addOrderNoCheck(HashMap<BigDecimal, Queue<Orders>> orderTable, List<Orders> orderDetails) {
-        for(Orders order : orderDetails) {
+        for (Orders order : orderDetails) {
             if (orderTable.containsKey(order.getPrice())) {
                 orderTable.get(order.getPrice()).add(order);
             } else {
@@ -143,7 +143,7 @@ public class OrderService {
 
     public void removeOrderById(int id) {
         Orders orderToRemove = getOrderById(id);
-        if(orderToRemove == null) return; // Safety check, as getOrderById() has a null check
+        if (orderToRemove == null) return; // Safety check, as getOrderById() has a null check
 
         Queue<Orders> targetQueue;
         if (orderToRemove.getSide() == Side.BUY) {
