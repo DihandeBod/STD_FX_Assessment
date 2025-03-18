@@ -3,12 +3,14 @@ package Services;
 import com.Entities.OrderBook;
 import com.Entities.Orders;
 import com.Entities.Side;
+import com.fx_assessment.Main;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.logging.Level;
 
 import static java.lang.Math.abs;
 
@@ -25,15 +27,22 @@ public class MatchingEngineService {
     }
 
     public boolean fulfillOrder(Orders incomingOrder) {
-        if (incomingOrder.getQuantity() <= 0) return false;
+        if (incomingOrder.getQuantity() <= 0) {
+            Main.LOGGER.log(Level.WARNING, "Order quantity is less than zero");
+            return false;
+        }
 
         // Basic variables for fulfilling an order
         int quantityRemaining = incomingOrder.getQuantity();
         Queue<Orders> targetQueueForIncomingOrder = matchingOrder(incomingOrder);
-        if (targetQueueForIncomingOrder == null || targetQueueForIncomingOrder.isEmpty()) return false;
+        if (targetQueueForIncomingOrder == null || targetQueueForIncomingOrder.isEmpty()) {
+            Main.LOGGER.log(Level.WARNING, "The queue you are attempting to fulfill does not exist");
+            return false;
+        }
 
         for (Orders targetOrder : targetQueueForIncomingOrder) {
             if (quantityRemaining <= 0) {
+                Main.LOGGER.log(Level.WARNING, "Incoming order: Order quantity is less or equal than zero");
                 break;
             }
 
@@ -61,6 +70,7 @@ public class MatchingEngineService {
                 orderService.addOrderNoCheck(orderBook.getSellOrders(), leftoverList);
             }
         }
+        Main.LOGGER.log(Level.INFO, "Fulfilled incoming orders");
         return true;
     }
 
@@ -107,5 +117,6 @@ public class MatchingEngineService {
             if (targetOrder.getCompleted()) orderIdMap.remove(targetOrder.getPrice(), targetOrder);
         }
         targetQueue.removeIf(Orders::getCompleted);
+        Main.LOGGER.log(Level.INFO, "Removed completed orders");
     }
 }

@@ -5,8 +5,8 @@ import java.util.HashMap;
 import java.util.Queue;
 
 public class OrderBook {
-    public HashMap<BigDecimal, Queue<Orders>> buyOrders;
-    public HashMap<BigDecimal, Queue<Orders>> sellOrders;
+    public final HashMap<BigDecimal, Queue<Orders>> buyOrders;
+    public final HashMap<BigDecimal, Queue<Orders>> sellOrders;
 
     public OrderBook(HashMap<BigDecimal, Queue<Orders>> buyOrders, HashMap<BigDecimal, Queue<Orders>> sellOrders) {
         this.buyOrders = buyOrders;

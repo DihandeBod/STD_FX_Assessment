@@ -1,6 +1,6 @@
 package BusinessRules;
 
 public class OrderConstraints {
-    public int VALID_ORDER_DATE_IN_FUTURE = 7;
-    public int VALID_ORDER_QUANTITY = 0;
+    public final int VALID_ORDER_DATE_IN_FUTURE = 7;
+    public final int VALID_ORDER_QUANTITY = 0;
 }

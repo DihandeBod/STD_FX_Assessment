@@ -4,21 +4,23 @@ import BusinessRules.OrderConstraints;
 import com.Entities.OrderBook;
 import com.Entities.Orders;
 import com.Entities.Side;
+import com.fx_assessment.Main;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 public class OrderService {
-    protected List<Orders> allOrders = new LinkedList<>();
-    protected List<Orders> invalidOrders = new ArrayList<>();
-    protected List<Orders> allBuyOrders = new ArrayList<>();
-    protected List<Orders> allSellOrders = new ArrayList<>();
-    protected Map<BigDecimal, Orders> orderIdMap = new HashMap<>();
-    protected OrderBook orderBook = new OrderBook(new HashMap<>(), new HashMap<>());
-    protected MatchingEngineService matchingEngineService;
     private final OrderConstraints orderConstraints;
+    protected final List<Orders> allOrders = new LinkedList<>();
+    protected final List<Orders> invalidOrders = new ArrayList<>();
+    protected final List<Orders> allBuyOrders = new ArrayList<>();
+    protected final List<Orders> allSellOrders = new ArrayList<>();
+    protected final Map<BigDecimal, Orders> orderIdMap = new HashMap<>();
+    protected final OrderBook orderBook = new OrderBook(new HashMap<>(), new HashMap<>());
+    protected MatchingEngineService matchingEngineService;
 
     public OrderService(OrderConstraints orderConstraints) {
         this.orderConstraints = orderConstraints;
@@ -68,9 +70,10 @@ public class OrderService {
 
     public void handleOrders(List<Orders> ordersToHandle) {
         if (ordersToHandle == null || ordersToHandle.isEmpty()) {
-            throw new IllegalArgumentException("There are no orders to handle");
+            Main.LOGGER.log(Level.WARNING, "No orders found");
         }
 
+        assert ordersToHandle != null;
         for (Orders order : ordersToHandle) {
             if (order.getSide().equals(Side.BUY)) {
                 allBuyOrders.add(order);
@@ -96,7 +99,7 @@ public class OrderService {
                 wasMatched = matchingEngineService.fulfillOrder(order);
             }
 
-            if(!wasMatched) {
+            if (!wasMatched) {
                 if (orderTable.containsKey(order.getPrice())) {
                     orderTable.get(order.getPrice()).add(order);
                 } else {
@@ -106,6 +109,7 @@ public class OrderService {
                 }
             }
         }
+        Main.LOGGER.log(Level.INFO, "Order book has been setup");
     }
 
     // Functionality necessary for the assessment, missing modify
@@ -118,7 +122,7 @@ public class OrderService {
     }
 
     public void addOrderNoCheck(HashMap<BigDecimal, Queue<Orders>> orderTable, List<Orders> orderDetails) {
-        for(Orders order : orderDetails) {
+        for (Orders order : orderDetails) {
             if (orderTable.containsKey(order.getPrice())) {
                 orderTable.get(order.getPrice()).add(order);
             } else {
@@ -132,14 +136,14 @@ public class OrderService {
     public Orders getOrderById(int id) {
         Orders targetOrder = orderIdMap.get(new BigDecimal(id));
         if (targetOrder == null) {
-            System.out.println("Order not found");
+            Main.LOGGER.log(Level.WARNING, "Order not found");
         }
         return targetOrder;
     }
 
     public void removeOrderById(int id) {
         Orders orderToRemove = getOrderById(id);
-        if(orderToRemove == null) return; // Safety check, as getOrderById() has a null check
+        if (orderToRemove == null) return; // Safety check, as getOrderById() has a null check
 
         Queue<Orders> targetQueue;
         if (orderToRemove.getSide() == Side.BUY) {
@@ -157,6 +161,7 @@ public class OrderService {
         }
         orderIdMap.remove(new BigDecimal(id));
         targetQueue.remove(orderToRemove);
+        Main.LOGGER.log(Level.INFO, "Order removed");
     }
 
     public void modifyOrderById(int id, int quantity) {
@@ -177,6 +182,7 @@ public class OrderService {
             targetQueue.remove(orderToModify);
             targetQueue.add(orderToModify);
         }
+        Main.LOGGER.log(Level.INFO, "Order modified");
     }
 
 
