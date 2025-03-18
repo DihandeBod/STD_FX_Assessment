@@ -14,12 +14,12 @@ import java.util.stream.Collectors;
 
 public class OrderService {
     private final OrderConstraints orderConstraints;
-    protected List<Orders> allOrders = new LinkedList<>();
-    protected List<Orders> invalidOrders = new ArrayList<>();
-    protected List<Orders> allBuyOrders = new ArrayList<>();
-    protected List<Orders> allSellOrders = new ArrayList<>();
-    protected Map<BigDecimal, Orders> orderIdMap = new HashMap<>();
-    protected OrderBook orderBook = new OrderBook(new HashMap<>(), new HashMap<>());
+    protected final List<Orders> allOrders = new LinkedList<>();
+    protected final List<Orders> invalidOrders = new ArrayList<>();
+    protected final List<Orders> allBuyOrders = new ArrayList<>();
+    protected final List<Orders> allSellOrders = new ArrayList<>();
+    protected final Map<BigDecimal, Orders> orderIdMap = new HashMap<>();
+    protected final OrderBook orderBook = new OrderBook(new HashMap<>(), new HashMap<>());
     protected MatchingEngineService matchingEngineService;
 
     public OrderService(OrderConstraints orderConstraints) {
