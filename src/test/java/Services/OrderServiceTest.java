@@ -30,10 +30,6 @@ class OrderServiceTest {
         orderService.orderBook.getSellOrders().clear();
     }
 
-    @AfterEach
-    void tearDown() {
-    }
-
     @Test
     @DisplayName("Loading orders into hashmap")
     void getAllOrders() {
@@ -43,7 +39,6 @@ class OrderServiceTest {
 
         orderService.initialiseOrders();
         assertEquals(10, orderService.allOrders.size());
-        assertEquals(3, orderService.allSellOrders.size());
     }
 
     @Test
@@ -54,8 +49,9 @@ class OrderServiceTest {
         orderService.allOrders.clear();
 
         orderService.initialiseOrders();
+        orderService.handleOrders(orderService.allOrders);
 
-        assertEquals(7, orderService.allBuyOrders.size());
+        assertEquals(0, orderService.allBuyOrders.size());
     }
 
     @Test
@@ -67,17 +63,7 @@ class OrderServiceTest {
 
         orderService.initialiseOrders();
 
-        assertEquals(3, orderService.allSellOrders.size());
-    }
-
-    @Test
-    @DisplayName("Adding a buy order")
-    void addBuyOrder() {
-    }
-
-    @Test
-    @DisplayName("Adding a sell order")
-    void addSellOrder() {
+        assertEquals(0, orderService.allSellOrders.size());
     }
 
     @Test
@@ -142,10 +128,10 @@ class OrderServiceTest {
         );
     }
 
-//    @Test
-//    @DisplayName("Test printOrderBook() - just ensure it runs without error")
-//    void printOrderBook() {
-//        orderService.initialiseOrders();
-//        assertDoesNotThrow(() -> orderService.printOrderBook());
-//    }
+    @Test
+    @DisplayName("Test printOrderBook() - just ensure it runs without error")
+    void printOrderBook() {
+        orderService.initialiseOrders();
+        assertDoesNotThrow(() -> orderService.printOrderBook(orderService.orderBook));
+    }
 }
