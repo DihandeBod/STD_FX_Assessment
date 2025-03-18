@@ -4,10 +4,12 @@ import BusinessRules.OrderConstraints;
 import com.Entities.OrderBook;
 import com.Entities.Orders;
 import com.Entities.Side;
+import com.fx_assessment.Main;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 public class OrderService {
@@ -68,9 +70,10 @@ public class OrderService {
 
     public void handleOrders(List<Orders> ordersToHandle) {
         if (ordersToHandle == null || ordersToHandle.isEmpty()) {
-            throw new IllegalArgumentException("There are no orders to handle");
+            Main.LOGGER.log(Level.WARNING, "No orders found");
         }
 
+        assert ordersToHandle != null;
         for (Orders order : ordersToHandle) {
             if (order.getSide().equals(Side.BUY)) {
                 allBuyOrders.add(order);
@@ -106,6 +109,7 @@ public class OrderService {
                 }
             }
         }
+        Main.LOGGER.log(Level.INFO, "Order book has been setup");
     }
 
     // Functionality necessary for the assessment, missing modify
@@ -132,7 +136,7 @@ public class OrderService {
     public Orders getOrderById(int id) {
         Orders targetOrder = orderIdMap.get(new BigDecimal(id));
         if (targetOrder == null) {
-            System.out.println("Order not found");
+            Main.LOGGER.log(Level.WARNING, "Order not found");
         }
         return targetOrder;
     }
@@ -157,6 +161,7 @@ public class OrderService {
         }
         orderIdMap.remove(new BigDecimal(id));
         targetQueue.remove(orderToRemove);
+        Main.LOGGER.log(Level.INFO, "Order removed");
     }
 
     public void modifyOrderById(int id, int quantity) {
@@ -177,6 +182,7 @@ public class OrderService {
             targetQueue.remove(orderToModify);
             targetQueue.add(orderToModify);
         }
+        Main.LOGGER.log(Level.INFO, "Order modified");
     }
 
 

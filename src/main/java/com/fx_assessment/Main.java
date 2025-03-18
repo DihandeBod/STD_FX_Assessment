@@ -9,10 +9,13 @@ import com.Entities.Side;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 public class Main {
-    public static void main(String[] args) throws Exception {
+    public static final Logger LOGGER = Logger.getLogger(Main.class.getName());
+    public static void main(String[] args) {
 
         OrderConstraints orderConstraints = new OrderConstraints();
 
@@ -37,7 +40,7 @@ public class Main {
             orderService.modifyOrderById(8, 1); // Key 1 SELL
             orderService.modifyOrderById(4, 100); // Key 1.25 BUY
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            LOGGER.log(Level.SEVERE, e.getMessage());
         }
 
         System.out.println("Order book AFTER removals and modifications");
@@ -52,7 +55,7 @@ public class Main {
         try {
             orderService.handleOrders(incomingOrdersToMatch);
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            LOGGER.log(Level.SEVERE, e.getMessage());
         }
 
         orderService.cleanUpOrderBook();
