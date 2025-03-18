@@ -87,7 +87,7 @@ This method removes completed orders from the order book to ensure an updated re
 It is split away from the fulfillOrders(...) method as updating a hashMap in realtime will cause a ConcurrentModificationException.
 
 
-## Summary of DataStructures:
+## Summary of Data Structures:
 Maps:
 Map
 HashMap
